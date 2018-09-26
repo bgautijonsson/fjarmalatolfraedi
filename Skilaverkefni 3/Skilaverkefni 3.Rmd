@@ -22,7 +22,8 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.pos = 
 ```
 
 ```{r, results = 'hide'}
-packages <- c("tidyverse", "ggthemes", "knitr", "kableExtra", "scales", "ggforce", "ggsci")
+packages <- c("tidyverse", "ggthemes", "knitr", "kableExtra", "scales", "ggforce", "ggsci",
+              "broom")
 sapply(packages, require, character.only = TRUE, quietly = TRUE)
 options(knitr.table.format = "latex", knitr.kable.NA = "")
 theme_set(theme_tufte(base_size = 14) +
@@ -54,26 +55,60 @@ Framleiðslufyrirtæki þarf að velja á milli tveggja birgja sem selja örflö
 
 # Dæmi 3
 
-Rannsókn var gerð til að ákvarða samband milli vikulegra útgjalda til auglýsinga og söluhagnaðs. Niðurstaðan var eftirfarandi:
+Í þessu dæmi á að skila R kóða ásamt svörum. Rannsókn var gerð til að ákvarða samband milli vikulegra útgjalda til auglýsinga og söluhagnaðs. Niðurstaðan var eftirfarandi:
 
 ```{r}
 data <- data_frame(x = c(40, 20, 25, 20, 30, 
                          50, 40, 20, 50, 40, 25, 50),
                    y = c(385, 400, 395, 365, 475, 440, 
                          490, 420, 560, 525, 480, 510))
+
 data %>%
       set_names(c("Útgjöld til auglýsinga [mISK]", "Söluhagnaður [mISK]")) %>%
       kable(format = "latex", booktabs = TRUE, align = c("c", "c")) %>%
+      kable_styling(full_width = TRUE, font_size = 9)
+```
+
+**(a)** Notið R til að gera línulega aðhvarfsgreiningu á gögnunum með því að nota formúlurnar í bókinni beint og ákvarðið þannig jöfnu matlínunnar fyrir $Y = \beta_0 + \beta_1x$. Teiknið gögnin.
+
+```{r, echo = TRUE, fig.height = 3.5}
+x <- data %>% mutate(x0 = 1) %>% select(x0, x) %>% as.matrix
+y <- as.matrix(data$y)
+hat_matrix <- 
+betas <- solve(t(x) %*% x) %*% t(x) %*% y
+fmla <- paste0("Y = ", round(betas[1], 2), " + ", round(betas[2], 2), "x")
+ggplot(data, aes(x, y)) + geom_point() +
+      geom_abline(intercept = betas[1], slope = betas[2]) +
+      geom_text(aes(x = 30, y = 525, label = fmla))
+```
+
+
+
+**(b)** Ákvarðið 95% öryggisbil fyrir $\beta_1$ með því að reikna sjálf í R.
+
+```{r, echo = TRUE}
+e <- y - (x %*% betas)
+sigma2 <- ((t(e) %*% e) / (nrow(y) - nrow(betas))) %>% as.vector
+var_beta <- solve(t(x) %*% x)  %>% diag %>% as.vector %>% (function(x) x * sigma2)
+se_beta <- sqrt(var_beta)
+
+data_frame(beta = as.vector(betas), se = se_beta) %>%
+      mutate(lower = beta + qt(0.025, nrow(y)) * se,
+             upper = beta + qt(0.975, nrow(y)) * se)
+
+qt(c(0.025, 0.975), nrow(y))
+```   
+
+
+**(c)** Notið fallið `lm(y ~ x)` og staðfestið reikningana í **(a)** og **(b)**.
+
+```{r, echo = TRU}
+lm(y ~ x, data = data) %>%
+      tidy %>%
+      kable(format = "latex", booktabs = TRUE, digits = 3) %>%
       kable_styling(full_width = TRUE)
 ```
 
-Í þessu dæmi á að skila R kóða ásamt svörum.
-
-**(a)** Notið R til að gera línulega aðhvarfsgreiningu á gögnunum með því að nota formúlurnar í bókinni beint og ákvarðið annig jöfnu matlínunnar fyrir $Y = \beta_0 + \beta_1x$. Teiknið gögnin.
-
-**(b)** Ákvarðið 95% öryggisbil fyrir $\beta_1$ með því að rekna sjálf í R.
-
-**(c)** Notið fallið `lm(y ~ x)` og staðfestið reikningana í **(a)** og **(b)**.
 
 **(d)** Spáið fyrir vikulegum söluhagnaði þegar útgjöld til auglýsinga eru 35 milljónir ISK.
 

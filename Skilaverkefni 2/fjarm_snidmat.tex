@@ -1,0 +1,26 @@
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{eurosym}
+\usepackage{booktabs}
+\usepackage{ifthen}
+\usepackage{threeparttable}
+\usepackage{caption}
+\usepackage{mathabx}
+\usepackage[iso, norsk]{isodate}
+\usepackage{wrapfig}
+\usepackage{subcaption}
+\usepackage{caption}
+
+\captionsetup[table]{name = Tafla}
+\captionsetup[figure]{name = Mynd}
+\pagestyle{fancy}
+\fancyhf{}
+\addtolength{\headheight}{1.4cm}
+\geometry{top=1.25in, bottom=1.25in, left=1.0in, right=1.0in}
+\lhead{Fjármálatölfræði (HAG122F)}
+\chead{\isodate{\today}}
+\rhead{\ifthenelse{\value{page}=1} {\includegraphics[height = 1.6cm]{sigilumscholae.png}} {Háskóla Íslands (VoN svið)}}
+\fancyfoot[CE, CO]{Kennarar$\colon$Óli Páll Geirsson og Hringur Grétarsson}
+\renewcommand{\footrulewidth}{1pt}
+\renewcommand{\headrulewidth}{2pt}
+\fancypagestyle{plain}{\pagestyle{fancy}}

@@ -1,0 +1,356 @@
+---
+title: "Skilaverkefni 1"
+author:
+- "Brynjólfur Gauti Jónsson"
+- "Þórarinn Jónmundsson"
+output:
+  pdf_document:
+    includes:
+      in_header: fjarm_snidmat.tex
+    latex_engine: xelatex
+  html_document:
+    df_print: paged
+    theme: cerulean
+---
+
+```{r setup, include=FALSE}
+# echo = TRUE: Sýna kóða
+# message = FALSE: Ekki sýna óþarfa skilaboð í ritgerð
+# warning = FALSE: Ekki sýna viðvaranir í ritgerð
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.pos = 'h')
+
+```
+
+```{r, results = 'hide'}
+packages <- c("tidyverse", "ggthemes", "knitr", "kableExtra", "scales", "ggforce")
+sapply(packages, require, character.only = TRUE, quietly = TRUE)
+options(knitr.table.format = "latex", knitr.kable.NA = "")
+theme_set(theme_tufte(base_size = 14) +
+                theme(panel.border = element_rect(fill = NA),
+                      panel.grid.major = element_line(color = "gray78"),
+                      legend.background = element_rect(),
+                      legend.position = "top",
+                      axis.text.x = element_text(angle = 30, hjust = 1)))
+```
+
+# Dæmi 1
+
+Tilraun er fólgin í að velja af handahófi fjölskyldu sem á tvo bíla og fyrir bæði eldri og yngri bílinn athugum við hvort hann sé framleiddur í Bandaríkjunum, Evrópu eða Asíu.
+
+**1.** Hverjar eru mögulegar útkomur tilraunarinnar?
+
+**Lausn:**
+
+```{r}
+crossing(Eldri = c("Bandaríkin", "Evrópa", "Asía"),
+         Yngri = c("Bandaríkin", "Evrópa", "Asía")) %>%
+      mutate(event = paste0("$p_", row_number(), "$")) %>%
+      spread(Eldri, event) %>%
+      kable(format = "latex", 
+            booktabs = TRUE, 
+            escape = FALSE) %>%
+      kable_styling(latex_options = c("hold_position")) %>%
+      add_header_above(c("", "Eldri" = 3))
+```
+
+
+**2.** Hvaða útkomur eru innihaldnar í atburðinum að annar bílinn sé framleiddur í Bandaríkjunum en ekki hinn?
+
+**Lausn:**
+
+```{r}
+crossing(Eldri = c("Bandaríkin", "Evrópa", "Asía"),
+         Yngri = c("Bandaríkin", "Evrópa", "Asía")) %>%
+      mutate(event = paste0("$p_", row_number(), "$"),
+             event = ifelse((Eldri == "Bandaríkin" | Yngri == "Bandaríkin") & Eldri != Yngri,
+                            event,
+                            "")) %>%
+      spread(Eldri, event) %>%
+      kable(format = "latex", 
+            booktabs = TRUE, 
+            escape = FALSE) %>%
+      kable_styling(latex_options = c("hold_position")) %>%
+      add_header_above(c("", "Eldri" = 3))
+```
+
+**3.** Hvaða útkomur eru innihaldnar í atburðinum að að minnsta kosti annar bílanna sé ekki frá Bandaríkjunum? Hver er fylliatburður þess atburðar?
+
+**Lausn:**
+
+```{r}
+crossing(Eldri = c("Bandaríkin", "Evrópa", "Asía"),
+         Yngri = c("Bandaríkin", "Evrópa", "Asía")) %>%
+      mutate(event = paste0("$p_", row_number(), "$"),
+             event = ifelse(Yngri != "Bandaríkin" | Eldri != "Bandaríkin",
+                            paste0(event, footnote_marker_alphabet(1)), 
+                            paste0(event, footnote_marker_alphabet(2)))) %>%
+      spread(Eldri, event) %>%
+      kable(format = "latex", 
+            booktabs = TRUE, 
+            escape = FALSE) %>%
+      kable_styling(latex_options = c("hold_position")) %>%
+      add_header_above(c("", "Eldri" = 3)) %>%
+      footnote(alphabet = c("Mengi", "Fyllimengi"))
+```
+
+\newpage
+
+# Dæmi 2
+
+Tryggingafyrirtæki býður uppá fjögur stig sjálfsábyrgðar - enga, lága, meðal og háa - fyrir heimilistryggingu og þrjú stig - lága, meðal og háa - fyrir bílatryggingu. Taflan hér að neðan sýnir hlutfall viðskiptavina með báðar tryggingar í umræddum flokkum. 
+
+```{r}
+data_frame(Bíll = c("L", "M", "H", "Heild"),
+           E = c(.04, .07, .02, .13),
+           L = c(.06, .10, .03, .19),
+           M = c(.05, .2, .15, .4),
+           H = c(.03, .10, .15, .28),
+           Heild = c(.18, .47, .35, 1)) %>%
+      kable(format = "latex", booktabs = TRUE,
+            caption = "Hlutfall viðskiptavina") %>%
+      kable_styling(latex_options = c("striped",
+                                      "hold_position")) %>%
+      add_header_above(c("", "Heimili" = 4, ""))
+```
+
+Gerum ráð fyrir að viðskiptavinur með báðar tryggingar sé valinn af handahófi.
+
+**1.** Hverjar eru líkurnar á því að viðskiptavinurinn hafi meðal sjálfsábyrgð fyrir bílinn og háa sjálfsábyrgð fyrir heimilistrygginguna.
+
+**Lausn:**
+
+```{r}
+data_frame(Bíll = c("L", "M", "H", "Heild"),
+           E = rep(NA, 4),
+           L = rep(NA, 4),
+           M = rep(NA, 4),
+           H = c(NA, .10, NA, NA),
+           Heild = rep(NA, 4)) %>%
+      kable(format = "latex", booktabs = TRUE) %>%
+      kable_styling(latex_options = c("striped",
+                                      "hold_position")) %>%
+      add_header_above(c("", "Heimili" = 4, ""))
+```
+
+**2.** Hverjar eru líkurnar á því að hann hafi lága sjálfsábyrgð fyrir bílinn? En lága sjálfsábyrgð fyrir heimilið?
+
+**Lausn:**
+
+```{r}
+data_frame(Bíll = c("L", "M", "H", "Heild"),
+           E = c(.04, rep(NA, 3)),
+           L = c(.06, .10, .03, paste0(.19, footnote_marker_alphabet(2))),
+           M = c(.05, rep(NA, 3)),
+           H = c(.03, rep(NA, 3)),
+           Heild = c(paste0(.18, footnote_marker_alphabet(1)), rep(NA, 3))) %>%
+      kable(format = "latex", booktabs = TRUE, escape = FALSE) %>%
+      kable_styling(latex_options = c("striped",
+                                      "hold_position")) %>%
+      add_header_above(c("", "Heimili" = 4, "")) %>%
+      footnote(alphabet = c("Bíll", "Heimili"))
+```
+
+\newpage
+
+**3.** Hverjar eru líkurnar á því að viðskiptavinurinn sé í sama flokki fyrir bæði bíla- og heimilistrygginguna?
+
+**Lausn:**
+
+```{r}
+data_frame(Bíll = factor(c("L", "M", "H", "Heild"), levels = c("E","L", "M", "H", "Heild")),
+           E = c(.04, .07, .02, .13),
+           L = c(.06, .10, .03, .19),
+           M = c(.05, .2, .15, .4),
+           H = c(.03, .10, .15, .28),
+           Heild = c(.18, .47, .35, .41)) %>%
+      gather(Heimili, p, -Bíll) %>%
+      mutate(Heimili = factor(Heimili, levels = c("E", "L", "M", "H", "Heild"))) %>%
+      mutate(p = ifelse(Heimili == Bíll, p, "")) %>%
+      spread(Heimili, p) %>%
+      kable(format = "latex", booktabs = TRUE) %>%
+      kable_styling(latex_options = c("striped",
+                                      "hold_position")) %>%
+      add_header_above(c("", "Heimili" = 4, ""))
+```
+
+
+**4.** Með því að nota niðurstöðuna í *3.*, hverjar eru líkurnar á að viðskiptavinurinn sé í ólíkum flokkum fyrir bíla- og heimilistrygginguna?
+
+**Lausn:**
+
+$$1 - P(H = B) = 1 - 0.41 = \mathbf{0.59}$$
+
+**5.** Hverjar eru líkurnar á að hann hafi að minnsta kosti eina tryggingu í lágri sjálfsábyrgð?
+
+**Lausn:** Frá **1.** fæst
+
+$$P(H=L) + P(B=L) =0.19 + 0.18 = \mathbf{0.37}$$
+
+**6.** Hverjar eru þá líkurnar á að hvorug tryggingin sé í lága flokknum?
+
+**Lausn:**
+
+$$1 - (P(H = L) + P(B = L)) = 1 - 0.37 = \mathbf{0.63}$$
+
+\newpage
+
+# Dæmi 3
+
+Í dælukerfi eru tvær eins dælur, A og B. Kerfið virkar þótt önnur dælanna bili. Hins vegar, ef önnur bilar, þá eru meiri líkur á að hin bili líka vegna aukins álags, þ.e.a.s. *P(B bilar|A bilar) > P(B bilar) = q*. Það er vitað að í 7% tilvika bilar að minnsta kosti önnur þeirra innan ákveðins tíma og í 1% tilvika bila báðar. Hverjar eru líkurnar á að dæla A bili á líftímanum?
+
+**Lausn:** Gerum ráð fyrir að $P(A) = P(B)$. Vitum að
+
+$$P(A \cup B) = P(A) + P(B) - P(A\cap B) = 2P(A) - P(A\cap B) =   0.07$$
+
+$$P(A \cap B) = 0.01$$
+
+Reiknum: 
+
+$$P(A) = P(B) = \frac{P(A \cup B) + P(A\cap B)}{2} = \frac{0.07 + 0.01}{2} = \mathbf{0.04}$$
+
+
+\newpage
+
+# Dæmi 4
+
+Látum X vera hendingu með eftirfarandi dreifingarfall.
+
+$$F(b) = \begin{cases} 
+0,\ b < 0 \\
+1/2,\ 0 \leq b < 1 \\ 
+3/5, \ 1 \leq b < 2 \\ 
+4/5,\ 2 \leq b < 3 \\ 
+9/10,\ 3 \leq b < 3.5\\ 
+1,\ b \geq 3.5
+\end{cases}$$
+
+
+Ákvarðið líkindafall X og teiknið upp bæði föllin.
+
+**Lausn:**
+
+$$f(b) = \begin{cases} 
+0,\ b < 0 \\
+5/10,\ 0 \leq b < 1 \\ 
+1/10, \ 1 \leq b < 2 \\ 
+2/10,\ 2 \leq b < 3 \\ 
+1/10,\ 3 \leq b < 3.5\\ 
+1/10,\ b \geq 3.5
+\end{cases}$$
+
+```{r, fig.height = 4}
+data_frame(b = seq(0, 5, 0.01)) %>%
+      mutate(Dreififall = case_when(b < 0 ~ 0,
+                                    b < 1 ~ 1/2,
+                                    b < 2 ~ 3/5,
+                                    b < 3 ~ 4/5,
+                                    b < 3.5 ~ 9/10,
+                                    TRUE ~ 1),
+             Þéttifall = case_when(b < 0 ~ 0,
+                                   b < 1 ~ 5/10,
+                                   b < 2 ~ 1/10,
+                                   b < 3 ~ 2/10,
+                                   b < 3.5 ~ 1/10,
+                                   TRUE ~ 1/10)) %>%
+      gather(type, x, -b) %>%
+      ggplot(aes(b, x)) +
+      geom_area(alpha = 0.5) +
+      facet_grid("type") +
+      coord_cartesian(ylim = c(0, 1)) +
+      scale_y_continuous(labels = percent) +
+      labs(x = "b", y = "F(b) og f(b)")
+```
+
+
+\newpage
+
+# Dæmi 5
+
+Elko selur þrjár tegundir af frystum en geymslurými þeirra í rúmmetrum er uppgefið 0.45, 0.54, 0.72. Látum X = geymslurými valið af næsta kaupanda frystis. Gerum ráð fyrir að X hafi líkindafallið 
+
+```{r}
+data_frame(x = c(.45, .54, .72), `f(x)` = c(.2, .5, .3)) %>%
+      t() %>%
+      kable(booktabs = TRUE) %>%
+      kable_styling(latex_options = "hold_position")
+```
+
+**1.** Reiknið *E[X]* og *Var[X]*
+
+**Lausn:** Notum að $E[X] = \sum_xf(x)$ og $E[X^2] = \sum_xx^2f(x)$
+
+$$E[X] = 0.45 * 0.2 + 0.54 * 0.5 + 0.72 * 0.3 = \mathbf{0.576}$$
+
+$$Var[X] = E[X^2] - E[X]^2 = 0.45^2*0.2+0.54^2*0.5+0.72^2*0.3 - 0.576^2 = \mathbf{0.01}$$
+
+**2.** Ef verð frystis með geymslupláss X rúmmetra er *(250X - 85)* þúsund krónur, hvert er væntigildi verðsins sem næstu kaupandi frystis borgar? Hver er dreifni fyrir þetta verð?
+
+**Lausn:** Setjum V = 250X - 85.
+
+$$E[V] = E[250X - 85] = \sum_x(250x - 85)f(x) = 250\sum_xxf(x) - 85\sum_xf(x) = 250E[X] - 85 = 250 * 0.576 - 85 = \mathbf{59}$$
+
+$$Var[V] = Var[250X - 85] =  250^2Var[X] = 250^2 * 0.01 = \mathbf{625}$$
+
+\newpage
+
+# Dæmi 6
+
+Látum *f(x)* vera þéttifall fyrir hendinguna X, þar sem 
+
+$$f(x) = \begin{cases} 
+2(1 - x),\ 0\leq x \leq 1 \\ 
+0,\ otherwise
+\end{cases}$$
+
+**1.** Ákvarðið dreififall X og teiknið graf þess.
+
+**Lausn:**
+
+$$P(x \leq X) = \int_0^X2(1 - x)dx = 2x - x^2, 0 \leq x \leq 1$$
+
+```{r, fig.height = 2.5}
+data_frame(x = seq(0, 1, .01)) %>%
+      mutate(p = 2 * x - x^2) %>%
+      ggplot(aes(x, p)) +
+      geom_line()
+```
+
+
+**2.** Finnið $P(X \leq 0.5), P(X \leq 3)\ og\ P(0.25 \leq X \leq 0.5)$
+
+**Lausn:**
+
+```{r}
+P <- function(x1, x2) {
+      x1 <- ifelse(x1 < 0, 
+                   0, 
+                   ifelse(x1 > 1, 1, x1))
+      x2 <- ifelse(x2 < 0, 
+                   0, 
+                   ifelse(x2 > 1, 1, x2))
+      2 * x2 - x2^2 - (2 * x1 - x1^2)
+}
+
+data_frame(a = c(0, 0, 0.25),
+           b = c(0.5, 3, 0.5)) %>%
+      mutate(p = P(a, b)) %>%
+      set_names(c("a", "b", "$P(a \\leq X \\leq b)$")) %>%
+      kable(booktabs = TRUE, escape = FALSE) %>%
+      kable_styling()
+```
+
+
+**3.** Reiknið *E[X]* og staðalfrávik X.
+
+**Lausn:**
+
+$$E[X] = \int_0^1xf(x)dx = \int_0^12x(1 - x)dx = \int_0^12xdx - \int_0^12x^2 = [x^2]_0^1 - [\frac23x^3]_0^1 = 1 - \frac23 = \mathbf{\frac13}$$
+
+$$E[X^2] = \int_0^12x^2(1 - x)dx = \int_0^12x^2dx - \int_0^12x^3dx = \frac23 - \frac12 = \frac16$$
+
+$$Var[X] = E[X^2] - E[X]^2 = \frac16 - \frac{1}{9} = \frac{1}{18}$$
+
+$$\sigma_x = \sqrt{Var[X]} = \sqrt{\frac1{18}} = \mathbf{\frac{1}{3\sqrt{2}}}$$
+
+
+

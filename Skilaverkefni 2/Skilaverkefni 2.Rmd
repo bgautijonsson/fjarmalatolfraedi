@@ -1,0 +1,326 @@
+---
+title: "Skilaverkefni 2"
+author:
+- "Brynjólfur Gauti Jónsson"
+- "Þórarinn Jónmundsson"
+output:
+  pdf_document:
+    includes:
+      in_header: fjarm_snidmat.tex
+    latex_engine: xelatex
+  html_document:
+    df_print: paged
+    theme: cerulean
+---
+
+```{r setup, include=FALSE}
+# echo = TRUE: Sýna kóða
+# message = FALSE: Ekki sýna óþarfa skilaboð í ritgerð
+# warning = FALSE: Ekki sýna viðvaranir í ritgerð
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.pos = 'h')
+
+```
+
+```{r, results = 'hide'}
+packages <- c("tidyverse", "ggthemes", "knitr", "kableExtra", "scales", "ggforce", "ggsci")
+sapply(packages, require, character.only = TRUE, quietly = TRUE)
+options(knitr.table.format = "latex", knitr.kable.NA = "")
+theme_set(theme_tufte(base_size = 14) +
+                theme(panel.border = element_rect(fill = NA),
+                      panel.grid.major = element_line(color = "gray78"),
+                      legend.background = element_rect(),
+                      legend.position = "top",
+                      axis.text.x = element_text(angle = 30, hjust = 1)))
+```
+
+# Dæmi 1
+
+Gerum ráð fyrir að meðalverð á gulli hafi verið undanfarið $\mu = 30\$/gr$ og að staðalfrávik verðs á gulli hafi verið $\sigma = 2\$/gr$. Gerum svo ráð fyrir að verð á gulli í næstu viku sé normaldreifð slembistærð með væntigildi $\mu = 30\$/gr$ og staðalfrávik $\sigma = 2\$/gr$.
+
+**Dreififall meðalverðs:**
+$$
+P(X \leq x) = \int_{-\infty}^x\frac{1}{\sqrt{8\pi}}e^{-\frac{(X - 30)^2}{8}}
+$$
+
+**1.** Reiknið líkurnar á því að verð á gulli í næstu viku verði minna en $32\$/gr$.
+
+**Lausn:** Leysum þetta með R fallinu `pnorm(32,  mean = 30, sd = 2)`
+
+Líkurnar eru **`r round(pnorm(32, 30, 2), 2) * 100`%**
+
+**2.** Reiknið líkurnar á því að verð á gulli í næstu viku verði meira en $26\$/gr$.
+
+**Lausn:** Leysum þetta með R fallinu `1 - pnorm(26,  mean = 30, sd = 2)`
+
+Líkurnar eru **`r round(1 - pnorm(26,  mean = 30, sd = 2), 3) * 100`%**
+
+**3.** Reiknið líkurnar á því að verð á gulli í næstu viku verði meira en $26\$/gr$ og minna en $32\$/gr$.
+
+**Lausn:** Leysum þetta með R fallinu `pnorm(32,  mean = 30, sd = 2) - pnorm(26,  mean = 30, sd = 2)`
+
+Líkurnar eru **`r round(pnorm(32,  mean = 30, sd = 2) - pnorm(26,  mean = 30, sd = 2), 2) * 100`%**
+
+**4.** Ef við vitum að að verð á gulli í næstu viku verði meira en $30\$/gr$, hverjar eru þá líkurnar á því að það verði meira en $34\$/gr$?
+
+**Lausn:** Vitum að
+
+$$
+P(X > A | X > B) = \frac{P(X > A)}{P(X > B)} = \frac{1 - P(X \leq A)}{1 - P(X \leq B)}
+$$
+
+Leysum þetta því með R fallinu
+
+`(1 - pnorm(34,  mean = 30, sd = 2)) / (1 - pnorm(30,  mean = 30, sd = 2)`,
+
+og fáum út að líkurnar séu **`r round((1 - pnorm(34,  mean = 30, sd = 2)) / (1 - pnorm(30,  mean = 30, sd = 2)), 2) * 100`%**
+
+\newpage
+
+# Dæmi 2
+
+Látum $X_i \sim \mathcal{N}(\mu = 3, \sigma^2 = 9), i = 1, ..., 10$ vera óháðar normaldreifðar slembistærðir. Reiknið
+$$P(2(X1 + X2 + X3 + X4) < 48)$$
+
+**Lausn:** Þar sem $X_i$ eru óháðar dreifingar fæst
+$$
+Z = 2\sum_{i=1}^4X_i \sim \mathcal{N}(2\sum_{i=1}^4\mu_{X_i}, 2\sum_{i=1}^4\sigma^2_{X_i}) = \mathcal{N}(24, 72).
+$$
+Auðvelt er að reikna $P(Z < 48)$ með R skipuninni `pnorm(48, 24, 72)` og sjáum að líkurnar eru **`r round(pnorm(48, 24, 72), 2) * 100`%**
+
+\newpage
+
+# Dæmi 3
+
+Líftími ákveðinna rafhlaðna fylgir normal dreifingu með væntigildi $\mu = 5$ og staðalfrávik $\sigma = 1.5$ vikur. Þegar rafhlaðan deyr er henni samstundis skipt út fyrir nýja sem fylgir sömu dreifingu *(getum hugsað að hún sé frá sama framleiðanda og sé af sömu gerð)*. Metið líkurnar á því að það þurfi að nota 13 rafhlöður eða fleiri á einu ári.
+
+**Lausn:** Setjum
+$$
+X \sim \mathcal{N}(5, 1.5^2)
+$$
+Gerum ráð fyrir að líftími rafhlaðna sé óháður líftíma annarra rafhlaðna. Ef það skyldi þurfa að nota 13 rafhlöður á einu ári þarf að gilda að $13X \leq 52$. Fáum á sama hátt og í *dæmi 2* að
+$$
+Z = 13X \sim \mathcal{N}(45, 13 \cdot 1.5^2)
+$$
+og notum það til að reikna *P(Z < 52)*. R skipunin `pnorm(52, 45, 13 * 1.5^2)` gefur okkur að líkurnar séu `r round(pnorm(52, 45, 13 * 1.5^2), 2) * 100`%
+
+
+\newpage
+
+# Dæmi 4
+
+Látum $X_1, ..., X_n$ vera einsdreifðar og óháðar slembistærðir þ.a.
+$$X_i \sim \mathcal{N}(\mu, \tau), i = i, ..., n$$
+
+þar sem $\mu$ er þekkt og $\tau$ er óþekkt dreifni (e. variance).
+
+**(a)** Sýnið að senileikametillinn fyrir $\tau$ er 
+$$\hat\tau = \frac1n\sum_{i=1}^n(X_i - \mu)^2$$.
+
+**Lausn:** Þéttifall $X_i$ er 
+$$
+f(x | \mu, \tau) = \frac{1}{\sqrt{2\pi\tau}}e^{-\frac{(x - \mu)^2}{2\tau}}
+$$
+Sennileikafall fyrir $\tau$ er því
+$$
+\mathcal{L}(\tau | x, \mu) = \prod_i^n \frac{1}{\sqrt{2\pi\tau}}e^{-\frac{(x_i - \mu)^2}{2\tau}}.
+$$
+Einföldum útreikninga með því að taka logrann af sennileikafallinu.
+$$
+\begin{aligned}
+l(\tau | x, \mu) = \mathrm{ln}(\mathcal L(\tau | x, \mu)) &= \sum_i^n\left[ \mathrm{ln}(1) - \mathrm{ln}(\sqrt{2\pi\tau}) - \frac{(x_i - \mu)^2}{2\tau} \right] \\
+&= n \cdot 0 - n \cdot [\mathrm{ln}(\sqrt{2\pi}) + \mathrm{ln}(\sqrt{\tau})] - \frac{1}{2\tau}\sum_i^n (x_i - \mu)^2 \\
+&= -n \cdot \mathrm{ln}(\sqrt{2\pi}) - n \cdot \mathrm{ln}(\sqrt \tau) - \frac{1}{2\tau}\sum_i^n (x_i - \mu)^2
+\end{aligned}
+$$
+Þar sem $\mu$ er þekkt getum við diffrað lograsennileikafallið með tilliti til $\tau$ og fengið samkvæmt fyrstu gráðu skilyrðum
+$$
+\begin{aligned}
+\frac{dl}{d\tau} &= - n \cdot \frac{1}{\sqrt{\tau}}\frac{1}{2\sqrt{\tau}} + \frac{1}{2\tau^2}\sum_i^n(x_i - \mu)^2 \\
+&= -\frac{n}{2\tau} + \frac{1}{2\tau^2}\sum_i^n(x_i - \mu)^2 = 0 \\
+\rightarrow \frac{n}{2\tau} &= \frac{1}{2\tau^2}\sum_i^n(x_i - \mu)^2 \\
+\rightarrow n &= \frac{1}{\tau}\sum_i^n(x_i - \mu)^2 \\
+\rightarrow \tau n &= \sum_i^n(x_i - \mu)^2 \\
+\rightarrow \tau &= \frac{1}{n}\sum_i^n(x_i - \mu)^2
+\end{aligned}
+$$
+
+\newpage
+
+**(b)** Reiknið bjaga sennileikametilsins $\hat\tau$.
+
+**Lausn:** Þurfum að finna
+$$
+\mathrm{Bias}_\tau[\hat\tau] = E[\hat\tau] - \tau
+$$
+Reiknun fyrst væntigildi metilsins $\hat\tau$. Þar sem meðaltalið $\mu$ er þekkt fáum við einfaldlega að
+$$
+E[\hat\tau] = E\left[\frac1n\sum_i^n(x_i - \mu)^2\right] = \tau .
+$$
+Við fáum því að 
+$$
+\mathrm{Bias}_\tau[\hat\tau] = 0
+$$
+sem kemur heim og saman miðað við forsendur dæmisins. Önnur væri raunin ef þýðismeðaltalið væri ekki þekkt.
+\newpage
+
+# Dæmi 5
+
+Úrtak af $n = 56$ athuguðum bómullarsýnum gefur úrtaksmeðaltalið af hlutfallsteygjanleika bómullarinnar sem $\overline x = 8.17$ og úrtaksstaðalfrávikið $s = 1.42$. Finnið 95% öryggisbil fyrir sanna meðal-hlutfallsteygjanleikann $\mu$.
+
+**Lausn:** Þar sem við þekkjum ekki staðalfrávik þýðisins finnum við öryggisbilið með *t-dreifingunni*. Stærð úrtaksins er $56$ svo fjöldi frígráða er $df = n - 1 = 55$. Vendigildið $t_c$ er því $t_c = 2.00$ fyrir tvíhliða $\alpha$. Við fáum:
+$$
+\overline{x} \pm t_c \left( \frac{s}{\sqrt{n}} \right) = 8.17 \pm 2 \cdot \frac{1.42}{\sqrt{56}}.
+$$
+
+95$\%$ öryggisbilið fyrir $\mu$ er því $(7.79; 8.55)$.
+
+
+\newpage
+
+# Dæmi 6
+
+Hér höfum við slembiúrtak að stærð $n = 10$ og búið er að reikna fyrir okkur
+$$\sum_{i = 1}^xx_i = 219,0 \ \text{og} \ \sum_{i = 1}^nx_i^2 = 4949,9$$.
+
+Hér má gera ráð fyrir að úrtaið komi úr normaldreifðu þýði.
+
+
+**(a)** Reiknið punktmat fyrir $\mu$ og $\sigma$
+
+**Lausn:** Þar sem úrtakið kemur úr normaldreifðu þýði notum við metla
+$$
+\overline{x} = \frac{1}{n} \sum ^n _{i = 1} x_i \quad \mbox{og} \quad s = \sqrt{\frac{1}{n - 1} \sum (x_i - \overline{x})^2},
+$$
+
+fyrir $\mu$ og $\sigma$. Innsetning gefur að
+$$
+\hat{\mu} = \overline{x} = \frac{1}{10} \cdot 219.0 = 21.9.
+$$
+
+Reiknum næst 
+$$
+\begin{aligned}
+\sum _{i = 1} ^n (x_i - \overline{x})^2 &= \sum _{i = 1} ^n (x_i ^2) - n\overline{x} ^2 \\
+&= 4949.9 - 10 \cdot (21.9)^2 \\
+&\approx 153.8.
+\end{aligned}
+$$
+
+Þá er $\hat{\sigma} = s$ auðfundinn:
+
+$$
+s = \sqrt{\frac{1}{9} \cdot 153.8} \approx 4.134.
+$$
+
+**(b)** Reiknið 95% öryggisbil fyrir $\sigma$
+
+**Lausn:** Samkvæmt nótunum hans Birgis er $100(1 - \alpha)\%$ öryggisbil fyrir $\sigma$ gefið með
+$$
+\sigma : \left( \sqrt{\frac{(n - 1)s^2}{\chi ^2 _{\alpha / 2, n - 1}}}, \sqrt{\frac{(n - 1)s^2}{\chi ^2 _{1 - \alpha / 2, n - 1}}} \right)
+$$
+Finnum viðeigandi kí-kvaðrat gildi með R skipuninni `qchisq(p = c(0.025, 0.975), df = 9)`:
+$$
+\chi ^2 _{0.025 ,9} = 19.023 \quad \mbox{og} \quad  \chi ^2 _{0.975 ,9} = 2.700
+$$
+Innsetning gefur þá að 95\% öryggisbil $\sigma$ er
+
+$$
+\sigma : \left(\sqrt{\frac{9 \cdot (4.134)^2}{19.023}}, \sqrt{\frac{9 \cdot (4.134)^2}{2.700}}\right) = \left(2.843, 7.548  \right)
+$$
+
+\newpage
+
+# Dæmi 7
+
+Líftími $n = 14$ vélhluta var mældur. Summa líftímanna var $1368$ klukkustundir. Gerið ráð fyrir að líftímarnir fylgi veldisdreifingu. Þ.e.a.s. ef við látum $X_j$ tákna j-ta líftíma, þá gildir að $X_j$ sé veldisdreifð slembistærð. Í táknmáli ritast það sem
+$$X_j \sim \text{Exp}(\lambda)$$
+þar sem $\lambda$ er óþekktur stiki.
+
+**(a)** Hvert er punktmatið á meðalgildi líftímanna?
+
+**Lausn:** Þéttifall veldisdreifingar er $f(x) = \lambda e ^{-\lambda x}$. Við byrjum á því að finna sennileikafall veldisdreifingarinnar.
+$$
+\mathcal L(\lambda ) = \prod _{i = 1} ^n f(x_i) = \prod _{i = 1} ^n \lambda e ^{-\lambda x_i} = \lambda ^n \exp\left( -\lambda \sum _{i = 1} ^n x_i \right).
+$$
+
+Við tökum logrann af $\mathcal L(\lambda)$ og fáum 
+$$
+l(\lambda) = \ln (\mathcal L(\lambda)) = \ln \left( \lambda ^n \exp\left( -\lambda \sum _{i = 1} ^n x_i \right) \right) = n\ln \lambda  -\lambda \sum _{i = 1} ^n x_i.
+$$
+Diffrum með tilliti til $\lambda$ og athugum fyrstu gráðu skilyrði:
+$$
+\frac{d}{d\lambda} ln(L(\lambda))= \frac{d}{d\lambda} \left( n\ln \lambda  -\lambda \sum _{i = 1} ^n x_i \right) = \frac{n}{\lambda} - \sum _{i = 1} ^n x_i = 0
+$$
+Þegar jafnan að ofan er leyst fæst að punktmat á $\lambda$ er 
+$$
+\hat{\lambda} = \frac{n}{\sum _{i = 1} ^n x_i} = \frac{1}{\overline{x}}.
+$$
+I dæminum er $n = 14$ og summa líftímanna $\sum _{i = 1} ^{14} x_i = 1368$ svo $\hat{\lambda} = \frac{1368}{14} = \frac{684}{7}$.
+
+**(b)** Hvert er 95% öryggisbil fyrir meðalgildið?
+
+**Lausn:** Notfærum okkur að $100(1 - \alpha)\%$ öryggsbil fyrir $\hat\lambda$ reiknist:
+$$
+\frac{2n}{\hat{\lambda} \chi ^2 _{(\alpha/2, 2n)}} < \frac{1}{\lambda} < \frac{2n}{\hat{\lambda} \chi ^2 _{(1 - \alpha/2, 2n)}}
+$$
+Fyrir dæmi verður ójafnan að ofan:
+$$
+\frac{28}{\frac{7}{684} \cdot  \chi ^2 _{(0.025, 28)}} < \frac{1}{\lambda} < \frac{28}{\frac{7}{684} \cdot \chi ^2 _{(0.975, 28)}}.
+$$
+Finnum $\chi ^2$ gildi með R skipuninni `qchisq(c(0.025, 0.975), df = 28)` og fáum: 
+$$
+\frac{28}{\frac{7}{684} \cdot  44.461} < \frac{1}{\lambda} < \frac{28}{\frac{7}{684} \cdot 15.308 }.
+$$
+Svo að 95% öryggisbil $\hat\lambda$ er $\mathbf{[61.54, 178.73]}$
+
+\newpage
+
+**(c)** Reiknið 95% öryggisbil fyrir $P(X>150)$.
+
+**Lausn:**
+$$
+P(X > 150) = 1 - P(X \leq 150) = 1 - (1 - e^{- 150\cdot \lambda})
+$$
+Setjum inn endapunkta öryggisbilsins úr lið b og fáum
+$$
+e^{-150 \cdot 61.537} = 0.0874 \quad \mbox{og} \quad e^{-150 \cdot 178.730} = 0.432.
+$$
+Það er, öryggsibilið er: $\mathbf{[0.087, 0.43]}$.
+
+\newpage
+
+# Aukadæmi
+
+Höfum tvo metla $d_1$ og $d_2$ til að meta stikann $\theta$. Um metlana eru gefnar eftirfarandi upplýsingar
+$$E[d_1] = \theta, Var(d_1) = 6, E[d_2] = \theta + 2, Var(d_2) = 2$$
+Hvorn ættum við að velja til að meta stikann $\theta$?
+
+**Lausn:**
+
+Setjum $\hat{\mu_1} = E[d_1], \hat{\sigma_1}^2 = Var[d_1] = 6, \hat{\mu_2} = E[d_2], \hat{\sigma_2}^2 = Var[d_2] = 2$.
+
+Án þess að vita hvers eðlis dreifingin á bak við $\theta$ sé getum við nýtt okkur lögmál stórra talna til að smíða öryggisbil fyrir væntigildin $\hat\mu_1$ og $\hat\mu_2$ til að nálga $\hat\theta$.
+
+Ef við notum $\hat\mu_1$ og $\hat\sigma_1$ til að smíða öryggisbil fyrir $\theta$ fæst eitthvað í námunda við eftirfarandi.
+$$
+\left[ \hat\mu_1 - x\frac{\sqrt6}{\sqrt n} \leq \hat\theta \leq \hat\mu_1 + x\frac{\sqrt6}{\sqrt n} \right]
+$$
+$$
+\hat\theta \in \hat\mu_1 \pm x \frac{\sqrt6}{\sqrt n}
+$$
+
+Hins vegar ef við notum $\hat\mu_2$ og $\hat\sigma_2$ og þá staðreynd að væntigildið sé línulegur virki getum við nýtt okkur að $\hat\mu_2 = \theta + 2$ og fengið:
+$$
+\left[ \hat\mu_2 - x\frac{\sqrt2}{\sqrt n} \leq \hat\theta + 2 \leq \hat\mu_2 + x\frac{\sqrt2}{\sqrt n} \right]
+$$
+$$
+\left[ (\hat\mu_2 -2) - x\frac{\sqrt2}{\sqrt n} \leq \hat\theta \leq (\hat\mu_2 - 2) + x\frac{\sqrt2}{\sqrt n} \right]
+$$
+$$
+\hat\theta \in (\hat\mu_2 - 2) \pm \frac{\sqrt2}{\sqrt n}
+$$
+
+Öryggisbilið sem smíðað var með $\mu_2$ er þrengra og því áreiðanlegra. Ef hins vegar úrtaksstærð, $n$, er mjög há myndi þessi munur fara hverfandi.
+
+
+ 

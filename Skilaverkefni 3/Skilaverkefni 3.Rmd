@@ -1,0 +1,82 @@
+---
+title: "Skilaverkefni 3"
+author:
+- "Brynjólfur Gauti Jónsson"
+- "Þórarinn Jónmundsson"
+output:
+  pdf_document:
+    includes:
+      in_header: fjarm_snidmat.tex
+    latex_engine: xelatex
+  html_document:
+    df_print: paged
+    theme: cerulean
+---
+
+```{r setup, include=FALSE}
+# echo = TRUE: Sýna kóða
+# message = FALSE: Ekki sýna óþarfa skilaboð í ritgerð
+# warning = FALSE: Ekki sýna viðvaranir í ritgerð
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.pos = 'h')
+
+```
+
+```{r, results = 'hide'}
+packages <- c("tidyverse", "ggthemes", "knitr", "kableExtra", "scales", "ggforce", "ggsci")
+sapply(packages, require, character.only = TRUE, quietly = TRUE)
+options(knitr.table.format = "latex", knitr.kable.NA = "")
+theme_set(theme_tufte(base_size = 14) +
+                theme(panel.border = element_rect(fill = NA),
+                      panel.grid.major = element_line(color = "gray78"),
+                      legend.background = element_rect(),
+                      legend.position = "top"))
+```
+
+# Dæmi 1
+
+Ný aðferð til að mæla fosfór í jarðvegi er kynnt til sögunnar. Úrtak af 11 jarðvegssýnum úr jarðvegi með raunverugeu fosfórmagni $548 mg/kg$ er greint með nýju aðferðinni. Úrtaksmeðaltalið reynist vera 587 og úrtaksstaðalfrávikið 10.
+
+**(1)** Gefa gögnin til kynna að nýja aðferðin mæli fosfórmagnið rétt? Nota skal núlltilgátupróf með marktektarkröfu $\alpha = 0.05$.
+
+**(2)** Hverju þurfum við að gera ráð fyrir til að núlltilgátuprófið í **(1)** verði viðeigandi?
+
+
+\newpage
+
+# Dæmi 2
+
+Framleiðslufyrirtæki þarf að velja á milli tveggja birgja sem selja örflögur í tölvur. Slembiúrtak af 200 örflögum frá birgi *A* eru kannaðar og 8 þeira reyndust vera gallaðar, á meðan 13 í slembiúrtaki af 250 örflögum frá brgi *B* voru gallaðar. Notið núltilgátu til að meta hvort þessi niðurstaða ætti aðhafa áhrif á val fyrirtækisins á birgi með marktektarkröfu $\alpha = 0.01$.
+
+
+
+
+\newpage
+
+# Dæmi 3
+
+Rannsókn var gerð til að ákvarða samband milli vikulegra útgjalda til auglýsinga og söluhagnaðs. Niðurstaðan var eftirfarandi:
+
+```{r}
+data <- data_frame(x = c(40, 20, 25, 20, 30, 
+                         50, 40, 20, 50, 40, 25, 50),
+                   y = c(385, 400, 395, 365, 475, 440, 
+                         490, 420, 560, 525, 480, 510))
+data %>%
+      set_names(c("Útgjöld til auglýsinga [mISK]", "Söluhagnaður [mISK]")) %>%
+      kable(format = "latex", booktabs = TRUE, align = c("c", "c")) %>%
+      kable_styling(full_width = TRUE)
+```
+
+Í þessu dæmi á að skila R kóða ásamt svörum.
+
+**(a)** Notið R til að gera línulega aðhvarfsgreiningu á gögnunum með því að nota formúlurnar í bókinni beint og ákvarðið annig jöfnu matlínunnar fyrir $Y = \beta_0 + \beta_1x$. Teiknið gögnin.
+
+**(b)** Ákvarðið 95% öryggisbil fyrir $\beta_1$ með því að rekna sjálf í R.
+
+**(c)** Notið fallið `lm(y ~ x)` og staðfestið reikningana í **(a)** og **(b)**.
+
+**(d)** Spáið fyrir vikulegum söluhagnaði þegar útgjöld til auglýsinga eru 35 milljónir ISK.
+
+**(e)** Á 5% prófsstigi, getum við dregið þá ályktun að auglýsingar hafi áhrif á sölur?
+
+**(Auka)** Hvernig skal túlka $\beta_0$ og $\beta_1$ fyrir þessi gögn?

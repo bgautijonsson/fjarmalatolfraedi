@@ -1,0 +1,161 @@
+---
+title: "Untitled"
+author: "Þórarinn Jónmundsson 070790-2709"
+date: "September 15, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Dæmi 5
+Úrtak af $n = 56$ athuguðum bómullarsýnum gefur úrtaksmeðaltalið af hlutfallsteygjanleika bómullarinnar sem $\overline{x} = 8.17$ og úrtaksstaðalfrávikið $s = 1.42$. Finnið 95$\%$ öryggisbil fyrir sanna meðal-hlutfallsteygjanleikann $\mu$.
+
+### Lausn
+Þar sem við þekkjum ekki staðalfrávik þýðisins notum við $t$-öryggisbilið. Stærð úrtaksins er $56$ svo fjöldi frígráða er $df = n - 1 = 55$. Vendigildið $t_c$ er því $t_c = 2.00$ fyrir tvíhliða $\alpha$. Við fáum:
+$$
+\overline{x} \pm t_c \left( \frac{s}{\sqrt{n}} \right) = 8.17 \pm 2 \cdot \frac{1.42}{\sqrt{56}}.
+$$
+
+95$\%$ öryggisbilið fyrir $\mu$ er því $(7.79; 8.55)$.
+
+### Dæmi 6
+Her höfum við slembiúrtak að stærð $n = 10$ og búið er að reikna fyrir okkur
+$$
+\sum _{i = 1} ^n x_i = 219.0 \quad \mbox{og} \quad  \sum _{i = 1} ^n x_i ^2 = 4949.9 
+$$
+Hér má gera ráð fyrir því að úrtakið komi úr normaldreifðu þýði.
+
+\textit{Ábending:}
+$$
+\sum _{i = 1} ^n (x_i - \overline{x})^2 = \sum _{i = 1} ^n (x_i ^2) - n\overline{x} ^2
+$$
+
+a. Reiknið punktmat fyrir $\mu$ og $\sigma$
+
+b. Reikna 95\% öryggisbil fyrir $\sigma$.
+
+### Lausn
+
+a. Þar sem úrtakið kemur úr normaldreifðu þýði notum við metla
+$$
+\overline{x} = \frac{1}{n} \sum ^n _{i = 1} x_i \quad \mbox{og} \quad s = \sqrt{\frac{1}{n - 1} \sum (x_i - \overline{x})^2},
+$$
+
+fyrir $\mu$ og $\sigma$. Innsetning gefur að
+$$
+\hat{\mu} = \overline{x} = \frac{1}{10} \cdot 219.0 = 21.9.
+$$
+
+Reiknum næst 
+\begin{align*}
+\sum _{i = 1} ^n (x_i - \overline{x})^2 &= \sum _{i = 1} ^n (x_i ^2) - n\overline{x} ^2 \\
+&= 4949.9 - 10 \cdot (21.9)^2 \\
+&\approx 153.8.
+\end{align*}
+
+Þá er $\hat{\sigma} = s$ auðfundinn:
+
+$$
+s = \sqrt{\frac{1}{9} \cdot 153.8} \approx 4.134.
+$$
+
+b. Samkvæmt nótunum hans Birgis er $100(1 - \alpha)\%$ öryggisbil fyrir $\sigma$ gefið með
+$$
+\sigma : \left( \frac{(n - 1)s^2}{\chi ^2 _{\alpha / 2, n - 1}}, \frac{(n - 1)s^2}{\chi ^2 _{1 - \alpha / 2, n - 1}} \right)
+$$
+Finnum viðeigandi kí-kvaðrat gildi í töflu:
+$$
+\chi ^2 _{0.025 ,9} = 19.023 \quad \mbox{og} \quad  \chi ^2 _{0.975 ,9} = 2.700
+$$
+Innsetning gefur þá að 95\% öryggisbil $\sigma$ er
+
+$$
+\sigma : \left(\sqrt{\frac{9 \cdot (4.134)^2}{19.023}}, \sqrt{\frac{9 \cdot (4.134)^2}{2.700}}\right) = \left(2.843, 7.548  \right)
+$$
+
+### Dæmi 7
+Líftími $n = 14$ vélhluta var mældur. Summa líftímanna var 1368 klukkustundir. Gerið ráð fyrir að líftímarnir fylgi veldisdreifingu. Þ.e.a.s. ef við látum $X_j$ tákna $j$-ta líftíma. Þá gildir að $X_j$ er veldisdreifð slembistærð. Í táknmáli ritast það sem
+$$
+X_j \sim Exp(\lambda)
+$$
+þar sem $\lambda$ er óþekktur stiki.
+
+a) Hvert er punktmatið á meðalgildi líftímanna?
+b) Hvert er 95% öryggisbil fyrir meðalgildið?
+c) (Þessi liður er smá áskorun og gildir bara til upphækkunar) Reiknið 95% öryggisbil fyrir $P(X > 150)$, þ.e., líkurnar á að líftíminn sé stærri en 150 klukkustundir. Styðjist við öryggisbilið hér fyrir ofan.
+
+### Lausn
+a) Þéttifall veldisdreifingar er $f(x) = \lambda e ^{-\lambda x}$. Við byrjum á því að finna sennileikafall veldisdreifingarinnar.
+$$
+L(\lambda ) = \prod _{i = 1} ^n f(x_i) = \prod _{i = 1} ^n \lambda e ^{-\lambda x_i} = \lambda ^n \exp\left( -\lambda \sum _{i = 1} ^n x_i \right).
+$$
+
+Við tökum logrann af $L(\lambda)$ og fáum 
+$$
+\ln (L(\lambda)) = \ln \left( \lambda ^n \exp\left( -\lambda \sum _{i = 1} ^n x_i \right) \right) = n\ln \lambda  -\lambda \sum _{i = 1} ^n x_i.
+$$
+Diffrum með tilliti til $\lambda$ og athugum fyrstu gráðu skilyrði:
+
+$$
+\frac{d}{d\lambda} ln(L(\lambda))= \frac{d}{d\lambda} \left( n\ln \lambda  -\lambda \sum _{i = 1} ^n x_i \right) = \frac{n}{\lambda} - \sum _{i = 1} ^n x_i = 0
+$$
+
+Þegar jafnan að ofan er leyst fæst að punktmat á $\lambda$ er 
+$$
+\hat{\lambda} = \frac{n}{\sum _{i = 1} ^n x_i} = \frac{1}{\overline{x}}.
+$$
+
+I dæminum er $n = 14$ og summa líftímanna $\sum _{i = 1} ^{14} x_i = 1368$ svo $\hat{\lambda} = \frac{1368}{14} = \frac{684}{7}$.
+
+b) Samkvæmt Wikipedia er $100(1- \alpha)\%$ öryggsibilið fyrir veldisdreifað slembistærð $X$ skilgreint sem (ath að $E(X_j) = 1/\lambda$):
+$$
+\frac{2n}{\hat{\lambda} \chi ^2 _{(\alpha/2, 2n)}} < \frac{1}{\lambda} < \frac{2n}{\hat{\lambda} \chi ^2 _{(1 - \alpha/2, 2n)}}
+$$
+
+Fyrir dæmi verður ójafnan að ofan:
+
+$$
+\frac{28}{\frac{7}{684} \cdot  \chi ^2 _{(0.025, 28)}} < \frac{1}{\lambda} < \frac{28}{\frac{7}{684} \cdot \chi ^2 _{(0.975, 28)}}.
+$$
+
+Eftir að flett hefur verið upp í $\chi ^2$ töflu fæst loks fyrir gildi 15.308 og 44.461:
+
+$$
+\frac{28}{\frac{7}{684} \cdot  44.461} < \frac{1}{\lambda} < \frac{28}{\frac{7}{684} \cdot 15.308 }.
+$$
+
+
+Það er:
+$$
+(61.537;  178.730)
+$$
+
+
+c. Samkvæmt wikipedia er dreififall veldisdreifðar slembistærðar $F(x) = 1 - e^{-\lambda x} = P(X \leq x)$. Innsetning gefur þá
+$$
+P(X > 150) = 1 - P(X \leq 150) = 1 - (1 - e^{- 150\cdot \lambda})
+$$
+
+Setjum inn endapunkta öryggisbilsins úr lið b og fáum
+$$
+e^{-150 \cdot 61.537} = 0.0874 \quad \mbox{og} \quad e^{-150 \cdot 178.730} = 0.432.
+$$
+Það er, öryggsibilið er:
+$$
+(0.0874; 0.432).
+$$
+
+### Aukadæmi
+
+Höfum tvo metla $d_1$ og $d_2$ til að meta stikann $\theta$. Um metlana eru gefnar eftirfarandi upplýsingar
+$$
+E[d_1] = \theta, \quad Var(d_1) = 6, \quad E[d_2] = \theta + 2, \quad Var(d_2) = 2.
+$$
+Hvorn ættum við að velja til að meta stikann $\theta$.
+
+### Lausn
+
+Metill $d_1$ er óbjagaður en metill $d_2$ er það ekki. Metill $d_2$ er hins vegar nákvæmari en metill $d_1$ þar sem hann hefur lægri dreifni. Hægt að bera saman með MSE
+ 

@@ -71,7 +71,7 @@ data %>%
 
 **(a)** Notið R til að gera línulega aðhvarfsgreiningu á gögnunum með því að nota formúlurnar í bókinni beint og ákvarðið þannig jöfnu matlínunnar fyrir $Y = \beta_0 + \beta_1x$. Teiknið gögnin.
 
-```{r, echo = TRUE, fig.height = 3.5}
+```{r, echo = TRUE, fig.height = 3}
 x <- data %>% mutate(x0 = 1) %>% select(x0, x) %>% as.matrix
 y <- as.matrix(data$y)
 hat_matrix <- 
@@ -82,7 +82,7 @@ ggplot(data, aes(x, y)) + geom_point() +
       geom_text(aes(x = 30, y = 525, label = fmla))
 ```
 
-
+\newpage
 
 **(b)** Ákvarðið 95% öryggisbil fyrir $\beta_1$ með því að reikna sjálf í R.
 
@@ -92,26 +92,60 @@ sigma2 <- ((t(e) %*% e) / (nrow(y) - nrow(betas))) %>% as.vector
 var_beta <- solve(t(x) %*% x)  %>% diag %>% as.vector %>% (function(x) x * sigma2)
 se_beta <- sqrt(var_beta)
 
-data_frame(beta = as.vector(betas), se = se_beta) %>%
+data_frame(term = c("Skurðpunktur", "x"), 
+           beta = as.vector(betas), 
+           se = se_beta) %>%
       mutate(lower = beta + qt(0.025, nrow(y)) * se,
-             upper = beta + qt(0.975, nrow(y)) * se)
-
-qt(c(0.025, 0.975), nrow(y))
+             upper = beta + qt(0.975, nrow(y)) * se) %>%
+      set_names(c("Breyta", "Stuðull", "Staðalvilla", "Neðri", "Efri")) %>%
+      kable(format = "latex", booktabs = TRUE, digits = 3, align = c("l", rep("c", 4))) %>%
+      kable_styling() %>%
+      add_header_above(c("", "", "", "95% Öryggisbil" = 2))
 ```   
 
 
 **(c)** Notið fallið `lm(y ~ x)` og staðfestið reikningana í **(a)** og **(b)**.
 
-```{r, echo = TRU}
-lm(y ~ x, data = data) %>%
+```{r, echo = TRUE}
+mod <- lm(y ~ x, data = data)
+mod %>%
       tidy %>%
+      select(term, estimate, std.error) %>%
+      mutate(lower = estimate + qt(0.025, nrow(y)) * std.error,
+             upper = estimate + qt(0.975, nrow(y)) * std.error) %>%
+      set_names(c("Breyta", "Stuðull", "Staðalvilla", "Neðri", "Efri")) %>%
       kable(format = "latex", booktabs = TRUE, digits = 3) %>%
-      kable_styling(full_width = TRUE)
+      kable_styling(full_width = TRUE) %>%
+      add_header_above(c("", "", "", "95% Öryggisbil" = 2))
 ```
 
+\newpage
 
 **(d)** Spáið fyrir vikulegum söluhagnaði þegar útgjöld til auglýsinga eru 35 milljónir ISK.
 
+```{r, fig.width = 10, fig.height = 4}
+pred_dat <- data_frame(x = 35) %>% (function(x) {
+      x$y <- predict(mod, x)
+      x
+})
+ggplot(data, aes(x, y, color = "Söguleg gögn")) + geom_point() +
+      geom_abline(intercept = betas[1], slope = betas[2]) +
+      geom_point(data = pred_dat, aes(color = "Forspá")) +
+      geom_label(data = pred_dat, aes(label = paste(round(y, 2), "mISK"), color = "Forspá"), 
+                 nudge_x = 4, nudge_y = -10, show.legend = FALSE) +
+      scale_color_nejm(guide = guide_legend(title = "Tegund punkts",
+                                            title.position = "top",
+                                            title.hjust = 0.5)) +
+      theme(legend.position = "right")
+```
+
+
 **(e)** Á 5% prófsstigi, getum við dregið þá ályktun að auglýsingar hafi áhrif á sölur?
 
+Þar sem öryggisbil fyrir hallastuðul við auglýsingar inniheldur ekki núll getum við ályktan með 95% vissu að áhrif auglýsinga á sölu séu ekki núll.
+
 **(Auka)** Hvernig skal túlka $\beta_0$ og $\beta_1$ fyrir þessi gögn?
+
+$\beta_0$ er vænt sölumagn þegar engu fjármagni er varið í auglýsingar. Hafa ber varann á þar sem úrtak inniheldur ekki mælingar á sölu fyrir auglýsingaútgjöld minni en 20 mISK eða meiri en 50 mISK. Mælt er með að heimfæra ekki niðurstöður greiningar á auglýsingafjármagn langt utan þess bils.
+
+$\beta_1$ er vænt aukning í sölumagni þegar vikulegum útgjöldum til auglýsinga er aukið um 1 mISK.

@@ -64,10 +64,7 @@ Við höfnum því núlltilgátunni $H_0$ undir marktektarkröfunni $\alpha = 0.
 
 **(2)** Hverju þurfum við að gera ráð fyrir til að núlltilgátuprófið í **(1)** verði viðeigandi?
 
-Að gögnin komi úr normaldreifingunnni og fyrir lítið úrtak að gögnin séu án útlaga eða séu ekki skeif.
-
-the condition is that the data satisfies the conditions similar to those used for constructing a t-confidence interval for the mean.  Those were either the data comes from an approxmately normal distribution, or the sample size is large enough (at least 30), or a small sample size (less than 30) the data is not skewed or has outliers.  If any of these conditions are satisfied, the we can calculate the following test statistic
-
+Að gögnin komi úr normaldreifingunnni og fyrst úrtakið er lítið að gögnin séu án útlaga eða séu ekki skeif.
 
 \newpage
 

@@ -72,11 +72,20 @@ Að gögnin komi úr normaldreifingunnni og fyrst úrtakið er lítið að gögn
 
 Framleiðslufyrirtæki þarf að velja á milli tveggja birgja sem selja örflögur í tölvur. Slembiúrtak af 200 örflögum frá birgi *A* eru kannaðar og 8 þeira reyndust vera gallaðar, á meðan 13 í slembiúrtaki af 250 örflögum frá brgi *B* voru gallaðar. Notið núltilgátu til að meta hvort þessi niðurstaða ætti aðhafa áhrif á val fyrirtækisins á birgi með marktektarkröfu $\alpha = 0.01$.
 
+**Lausn:**
 
+Við leysum dæmið út frá tvíkosta *(e. binomial)* dreifingunni. Þar sem úrtakið er nægilega stórt notum við normaldreifinguna til að nálga prófstærð miðað vil núlltilgátuna $H_0: p_A = p_B$.
+
+Höfum að $\hat p_A = \frac{8}{200}$, $\hat p_B = \frac{13}{250}$, $\hat p = \frac{8 + 13}{200 + 250} = \frac{21}{450}$. Prófstærðin okkar verður
+
+$$
+z = \frac{\hat p_A - \hat p_B}{\sqrt{\hat p(1 - \hat p)(1/n_1 + 1/n_2)}} = -0.6
+$$
+Flettum upp p-gildi prófstærðar með R skipuninni `2 * dnorm(-0.6)` og fáum p = `r round(2 * dnorm(-0.6), 2)`. Við getum því ekki sagt að munur sé á birgjum og því ætti niðurstaðan ekki að hafa áhrif á val fyrirtækisins.
 
 
 \newpage
-
+p
 # Dæmi 3
 
 Í þessu dæmi á að skila R kóða ásamt svörum. Rannsókn var gerð til að ákvarða samband milli vikulegra útgjalda til auglýsinga og söluhagnaðs. Niðurstaðan var eftirfarandi:

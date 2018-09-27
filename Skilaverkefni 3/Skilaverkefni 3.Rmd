@@ -39,6 +39,29 @@ Ný aðferð til að mæla fosfór í jarðvegi er kynnt til sögunnar. Úrtak a
 
 **(1)** Gefa gögnin til kynna að nýja aðferðin mæli fosfórmagnið rétt? Nota skal núlltilgátupróf með marktektarkröfu $\alpha = 0.05$.
 
+Við ætlum að prófa $\mu$ sem er hið sanna meðaltal þýðisins og gerum ráð fyrir því að meðaltalið komi úr normaldreifingunni (skv T3_Nulltilgatu.pdf). Tilgátuprófið er 
+$$
+H_0 : \mu = 548 \quad \mbox{v.s.} \quad H_1: \mu \neq 548.
+$$
+
+Þar sem hið sanna staðalfrávik er ekki gefið þurfum við að styðjast við $t$-próf. Prófstærðin er:
+
+$$
+t = \frac{\overline{x} - \mu_0}{s/\sqrt{n}}.
+$$
+
+Hér er $\overline{x}$ úrtaksmeðaltalið, $s$ úrtaksstaðalfrávikið, $\mu_0$ núlltilgátugildið sem við viljum prófa og $n$ fjöldi mælinga. Í okkar tilfelli verður því jafnan að ofan:
+$$
+t = \frac{587 - 548}{10 / \sqrt{11}} = \frac{39}{10 / \sqrt{11}} \approx 12.935
+$$
+
+Þar sem gagntilgátuprófið okkar er tvíhliða þá höfnum við $H_0$ ef $|t| > t_{\alpha /2, n-1}$. Þar sem $\alpha = 0.05$ er $t_{0.025, 10} = 2.228$ og því ljóst að
+$$
+|t| = |12.935| > 2.228 = t_{0.025, 10}.
+$$
+
+Við höfnum því núlltilgátunni $H_0$ undir marktektarkröfunni $\alpha = 0.05$ og samþykkjum gagntilgátuna undir sömu marktektarkröfu.
+
 **(2)** Hverju þurfum við að gera ráð fyrir til að núlltilgátuprófið í **(1)** verði viðeigandi?
 
 

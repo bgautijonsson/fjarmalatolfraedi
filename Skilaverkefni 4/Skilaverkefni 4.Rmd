@@ -4,40 +4,40 @@ author:
 - "Brynjólfur Gauti Jónsson"
 - "Þórarinn Jónmundsson"
 output:
+  html_document:
+    df_print: paged
+    theme: cerulean
   pdf_document:
     includes:
       in_header: fjarm_snidmat.tex
     latex_engine: xelatex
-  html_document:
-    df_print: paged
-    theme: cerulean
 ---
 
 ```{r setup, include=FALSE}
 # echo = TRUE: Sýna kóða
 # message = FALSE: Ekki sýna óþarfa skilaboð í ritgerð
 # warning = FALSE: Ekki sýna viðvaranir í ritgerð
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.pos = 'h')
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.pos = 'h', fig.width = 12)
 
 ```
 
 ```{r, results = 'hide'}
-packages <- c("tidyverse", "ggthemes", "knitr", "kableExtra", "scales", "ggforce", "ggsci",
-              "broom", "lubridate")
+packages <- c("ggthemes", "knitr", "kableExtra", "scales", "ggforce", "ggsci",
+              "broom", "lubridate", "fBasics", "tidyquant", "tidyverse", "sweep")
 sapply(packages, require, character.only = TRUE, quietly = TRUE)
-options(knitr.table.format = "latex", knitr.kable.NA = "")
+options(knitr.table.format = "html", knitr.kable.NA = "")
 theme_set(theme_tufte(base_size = 14) +
                 theme(panel.border = element_rect(fill = NA),
                       panel.grid.major = element_line(color = "gray78"),
                       legend.background = element_rect(),
                       legend.position = "top",
-                      strip.background = element_rect(fill = "grey78")))
+                      strip.background = element_rect(fill = "grey88")))
 ```
 
 
 ```{r}
 url <- "https://www.sedlabanki.is/xmltimeseries/Default.aspx?DagsFra=1999-01-05&DagsTil=2018-09-28&TimeSeriesID=4064&Type=csv"
-data <- read_delim(url, delim = ";") %>%
+data <- read_delim(url, delim = ";", col_names = as.character(seq(1:8))) %>%
       select(7:8) %>%
       set_names(c("Date", "Series")) %>%
       mutate(Date = mdy_hms(Date))
@@ -69,7 +69,8 @@ data %>%
       ggplot(aes(Date, Return)) +
       geom_line() +
       facet_grid("Type") +
-      scale_y_continuous(breaks = pretty_breaks(8), labels = percent)
+      scale_y_continuous(breaks = pretty_breaks(8), labels = percent) +
+      coord_cartesian(ylim = c(-0.25, 0.25))
 ```
 
 * Reiknið út frá formúlum fyrir þýði: Væntigildi, flökt, skeifni, og umfram reisni lograávöxtunarinnar. Staðfestið reikninga með R-fallinu 'basicStats'.
@@ -83,9 +84,9 @@ data %>%
                 Staðalfrávik = sqrt(Dreifni),
                 Skeifni = sum((Log - Væntigildi)^3) / (N * Staðalfrávik^3),
                 `Umram reisni` = sum((Log - Væntigildi)^4) / (N * Staðalfrávik^4) - 3) %>%
-      gather(Stat, Value)
-
-basicStats(data$Log)
+      gather(Stat, Value) %>%
+      kable(format = "html") %>%
+      kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
 
@@ -102,12 +103,23 @@ data %>%
                 Staðalfrávik = sqrt(Dreifni),
                 Skeifni = sum((Log - Væntigildi)^3) / ((N - 1) * Staðalfrávik^3),
                 `Umram reisni` = sum((Log - Væntigildi)^4) / ((N - 1) * Staðalfrávik^4) - 3) %>%
-      summarize(p_Væntigildi = Væntigildi / (Staðalfrávik / sqrt(N)),
-                p_Samhverfa = Skeifni / sqrt(6 / N),
-                p_Halar = (`Umram reisni` - 3) / sqrt(24 / N)) %>%
-      summarize(p_Væntigildi = qt(p_Væntigildi, df = 4919),
-                p_Samhvefa = 2 * (1  - pnorm(p_Samhverfa)),
-                p_Halar = 2 * (1 - pnorm(p_Halar)))
+      summarize(z_Væntigildi = Væntigildi / (Staðalfrávik / sqrt(N)),
+                z_Samhverfa = Skeifni / sqrt(6 / N),
+                z_Halar = (`Umram reisni` - 3) / sqrt(24 / N),
+                p_Væntigildi = qt(z_Væntigildi, df = 4919),
+                p_Samhvefa = 2 * (1  - pnorm(z_Samhverfa)),
+                p_Halar = 2 * (1 - pnorm(z_Halar))) %>%
+      (function(x) {
+            Z <- t(x)[1:3, , drop = T]
+            P <- t(x)[4:6, , drop = T]
+            Breyta <- names(x)[1:3]
+            cbind(Breyta, Z, P)
+      }) %>%
+      as_tibble %>%
+      mutate(Breyta = str_replace(Breyta, "z_", "")) %>%
+      mutate_at(c("Z", "P"), as.numeric) %>%
+      kable(format = "html") %>%
+      kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
 * Teiknið dreifingu ávöxtunarinnar (notið R-fallið 'density') og berið saman við normaldreifingu með sama væntigildi og flökt. Hvað getiði sagt um dreifingu ávöxtunarinnar útfrá grafinu og fyrri lið?
@@ -117,7 +129,7 @@ plot_dat <- summarize(data, mean = mean(Log, na.rm = T), sd = sd(Log, na.rm = T)
 ggplot(data, aes(Log)) +
       geom_density(aes(col = "Raundreifing")) +
       stat_function(fun = dnorm, n = 1000, args = list(mean = plot_dat$mean,
-                                             sd = plot_dat$sd),
+                                                       sd = plot_dat$sd),
                     aes(col = "Vænt dreifing")) +
       scale_color_jama(guide = guide_legend(title = "")) +
       coord_cartesian(xlim = c(-0.025, 0.025))
@@ -129,20 +141,61 @@ ggplot(data, aes(Log)) +
 * Reiknið útfrá formúlum sjálffylgnistuðla lograávöxtunarinnar fyrir eins og tveggja daga seinkanir (e. lags). Staðfestið reikninga með R-fallinu 'acf'. Notið hornsviga og lengd ávöxtunarraðarinnar til að ná í bút úr ávöxtunarröðinni.
 
 ```{r acf}
-# ... <- LogReturn[1:length(LogReturn)-1] # Dæmi um bút úr upphaflegu ávöxtunarröðinni.
-# ... <- acf(...)
+data %>%
+      select(Date, Log) %>%
+      tq_mutate(select = Log, mutate_fun = lag.xts, k = 1:2,
+                col_rename = paste0("Lag_", 1:2)) %>%
+      gather(Lag, value, contains("Lag")) %>%
+      group_by(Lag) %>%
+      summarize(AC_cor = cor(Log, value, use = "pairwise.complete.obs"),
+                AC_cov = cov(Log, value, use = "pairwise.complete.obs") / 
+                      (sqrt(var(Log, use = "pairwise.complete.obs") * 
+                                  var(value, use = "pairwise.complete.obs"))),
+                mean = mean(Log, na.rm = T),
+                AC_fmla = sum((Log - mean) * (value - mean), na.rm = T) / 
+                      sum((Log - mean)^2, na.rm = T)) %>%
+      select(-mean) %>%
+      kable(format = "html") %>%
+      kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
 * Notið ACF-fallið til að fá fleiri sjálffylgnistuðla. Hvaða stuðlar eru marktækt frábrugðnir núlli? Setjið fram og reiknið núlltilgátur með $5\%$ marktækni. Bláu brotalínurnar í grafi ACF-fallsins koma hér að gagni til að staðfesta niðurstöður.
 
-```{r acfzero}
-# ...
+```{r acfzero, fig.height = 8}
+k <- 1:35
+col_names <- paste0("lag_", k)
+data %>%
+      select(Date, Log) %>%
+      tq_mutate(select = Log, mutate_fun = lag.xts, k = k,
+                col_rename = col_names) %>%
+      gather(Lag, value, -Date, -Log) %>%
+      mutate(Lag = factor(Lag, levels = col_names, labels = k),
+             Lag = as.character(Lag),
+             Lag = as.numeric(Lag)) %>%
+      group_by(Lag) %>%
+      summarize(AC = cor(Log, value, use = "pairwise.complete.obs"),
+                Type = ifelse(abs(AC) >= qnorm(0.975) / sqrt(n()),
+                              "Já",
+                              "Nei")) %>%
+      mutate(Lag = str_extract(Lag, "[0-9]+") %>% as.numeric) %>%
+      ggplot(aes(Lag, AC, col = Type)) +
+      geom_hline(yintercept = qnorm(0.975) / sqrt(nrow(data)), lty = 2, col = "slateblue") +
+      geom_hline(yintercept = qnorm(0.025) / sqrt(nrow(data)), lty = 2, col = "slateblue") +
+      geom_segment(aes(xend = Lag, yend = 0), col = "gray50") +
+      geom_point() +
+      scale_x_continuous(breaks = c(1, seq(5, 35, 5))) +
+      scale_y_continuous(breaks = pretty_breaks(8)) +
+      coord_cartesian(ylim = c(-0.15, 0.15)) +
+      scale_color_jama(guide = guide_legend(title = "Marktæk frábruðgið núll?",
+                                            title.position = "top",
+                                            title.hjust = 0))
 ```
+
 
 * Er sjálffylgni lograávöxtunarinnar marktækt frábrugðin núlli? Notið heildarpróf Ljung-Box með R-fallinu 'Box.test' til að draga ályktun.
 
 ```{r box}
-# ( Box.test(..., lag=..., type='Ljung' ) )
+Box.test(data$Log, type = "Ljung")
 ```
 
 
@@ -156,14 +209,24 @@ r_t-\mu &= \phi_1 \left(r_{t-1}-\mu\right) + \phi_2 \left(r_{t-2}-\mu\right) + a
 \end{aligned}$$
 
 ```{r ar2}
-# ( ar2likanid <- arima( ..., order=c(2,0,0) ) )
+mod <- arima(data$Log, order = c(2, 0, 0))
+mod %>%
+      tidy %>%
+      kable %>%
+      kable_styling
 ```
 
 * Hverjar eru einingarætur líkansins? Uppfylla þær skilyrði um veika sístæðni tímaraðarinnar (af hverju (ekki))? Eru stikar líkansins marktækt frábrugðnir núlli fyrir $5\%$ marktækni (normalpróf; flökt stika er gefið með R-fallinu 'sqrt(diag(likanid$asy.var.coef)')?
 
 ```{r ar2params}
-# ar2likanid$ar # Gildi stika ar2 líkansins
-# sqrt(diag(ar2likanid$asy.var.coef) # Flökt stika ar2 líkansins
+mod %>%
+      tidy %>%
+      select(term, estimate) %>%
+      spread(term, estimate) %>%
+      summarize(x = (ar1 - sqrt(ar1^2) + 4 * ar2) / 2) %>%
+      kable %>%
+      kable_styling()
+
 ```
 
 * Reiknið leifar líkansins fyrir þriðju, fjórðu og fimmtu fyrstu lograávöxtunina (ávöxtun í byrjun janúar 1999). Fyrstu gildi ávöxtunarinnar fást með R-fallinu 'head'. Staðfestið útreikninga með því að skoða '$residuals' parameter líkansins.
@@ -171,13 +234,53 @@ r_t-\mu &= \phi_1 \left(r_{t-1}-\mu\right) + \phi_2 \left(r_{t-2}-\mu\right) + a
 ```{r ar2res}
 # head(logReturn) # Sýnum fyrstu 6 gildi raðarinnar.
 # ar2likanid$residuals
+data %>%
+      select(Date, Log) %>%
+      (function(x) {
+            x$fitted <- forecast:::fitted.Arima(arima(x$Log, order = c(2, 0, 0)))
+            x$resid <- x$Log - x$fitted
+            x
+      }) %>%
+      slice(3:5) %>%
+      kable %>%
+      kable_styling
 ```
 
 * Skoðið sjálffylgnifall leifaraðar $AR(2)$, með því að nota ACF-fallið á '$residuals' parameter líkansins. Notið heildarpróf Ljung-Box á leifaröðina til að ákvarða hvort sjálffylgnistuðlarnir séu marktækt frábrugðnir núlli. Hvað getiði sagt um hversu vel $AR(2)$ líkanið lýsir lograávöxtunni/tímaröðinni?
 
-```{r ar2acf}
+```{r ar2acf, fig.height = 8}
 # acf(ar2likanid$residuals)
 # ( Box.test(..., lag=..., type='Ljung' ) )
+data %>%
+      select(Date, Log) %>%
+      (function(x) {
+            x$fitted <- fitted(arima(x$Log, order = c(2, 0, 0)))
+            x$resid <- x$Log - x$fitted
+            x
+      }) %>%
+      select(Date, resid) %>%
+      tq_mutate(select = resid, 
+                mutate_fun = lag.xts, 
+                k = 1:35, 
+                col_rename = paste0("Lag_", 1:35)) %>%
+      gather(Lag, value, contains("Lag")) %>%
+      group_by(Lag) %>%
+      summarize(AC = cor(resid, value, use = "pairwise.complete.obs"),
+                Type = ifelse(abs(AC) >= qnorm(0.975) / sqrt(n()),
+                              "Já",
+                              "Nei")) %>%
+      mutate(Lag = str_extract(Lag, "[0-9]+") %>% as.numeric) %>%
+      ggplot(aes(Lag, AC, col = Type)) +
+      geom_hline(yintercept = qnorm(0.975) / sqrt(nrow(data)), lty = 2, col = "slateblue") +
+      geom_hline(yintercept = qnorm(0.025) / sqrt(nrow(data)), lty = 2, col = "slateblue") +
+      geom_segment(aes(xend = Lag, yend = 0), col = "gray50") +
+      geom_point() +
+      scale_x_continuous(breaks = c(1, seq(5, 35, 5))) +
+      scale_y_continuous(breaks = pretty_breaks(8)) +
+      coord_cartesian(ylim = c(-0.15, 0.15)) +
+      scale_color_jama(guide = guide_legend(title = "Marktæk frábruðgið núll?",
+                                            title.position = "top",
+                                            title.hjust = 0))
 ```
 
 * Spáið lograávöxtunina einn, tvo og þrjá daga fram í tímann. Notið til þess stikamat $AR(2)$ líkansins og síðustu gildi lograávöxtunarinnar (R-fallið 'tail' sýnir síðustu gildi). Staðfestið útreikninga með því að nota R-fallið 'predict' á líkanið.

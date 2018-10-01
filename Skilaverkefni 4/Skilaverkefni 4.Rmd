@@ -1,0 +1,210 @@
+---
+title: "Skilaverkefni 4"
+author:
+- "Brynjólfur Gauti Jónsson"
+- "Þórarinn Jónmundsson"
+output:
+  pdf_document:
+    includes:
+      in_header: fjarm_snidmat.tex
+    latex_engine: xelatex
+  html_document:
+    df_print: paged
+    theme: cerulean
+---
+
+```{r setup, include=FALSE}
+# echo = TRUE: Sýna kóða
+# message = FALSE: Ekki sýna óþarfa skilaboð í ritgerð
+# warning = FALSE: Ekki sýna viðvaranir í ritgerð
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.pos = 'h')
+
+```
+
+```{r, results = 'hide'}
+packages <- c("tidyverse", "ggthemes", "knitr", "kableExtra", "scales", "ggforce", "ggsci",
+              "broom", "lubridate")
+sapply(packages, require, character.only = TRUE, quietly = TRUE)
+options(knitr.table.format = "latex", knitr.kable.NA = "")
+theme_set(theme_tufte(base_size = 14) +
+                theme(panel.border = element_rect(fill = NA),
+                      panel.grid.major = element_line(color = "gray78"),
+                      legend.background = element_rect(),
+                      legend.position = "top",
+                      strip.background = element_rect(fill = "grey78")))
+```
+
+
+```{r}
+url <- "https://www.sedlabanki.is/xmltimeseries/Default.aspx?DagsFra=1999-01-05&DagsTil=2018-09-28&TimeSeriesID=4064&Type=csv"
+data <- read_delim(url, delim = ";") %>%
+      select(7:8) %>%
+      set_names(c("Date", "Series")) %>%
+      mutate(Date = mdy_hms(Date))
+```
+
+
+```{r}
+data %>%
+      ggplot(aes(Date, Series)) +
+      geom_line() +
+      scale_y_log10(breaks = pretty_breaks(8))
+```
+
+
+## 1. hluti: Ávöxtun
+
+* Reiknið daglegu lograávöxtun tímaraðarinnar. Út frá því, reiknið einfalda ávöxtun raðarinnar.
+
+```{r return}
+# Hér kemur R-kóðablokk.
+# Nauðsynlegt er að hafa mismunandi heiti á öllum blokkum í .Rmd skránni.
+# T.d. heitir þessi blokk 'return'.
+# basicStats(...)
+data <- data %>%
+      mutate(Log = c(NA, diff(log(Series))),
+             Simple = exp(Log) - 1)
+data %>%
+      gather(Type, Return, Log, Simple) %>%
+      ggplot(aes(Date, Return)) +
+      geom_line() +
+      facet_grid("Type") +
+      scale_y_continuous(breaks = pretty_breaks(8), labels = percent)
+```
+
+* Reiknið út frá formúlum fyrir þýði: Væntigildi, flökt, skeifni, og umfram reisni lograávöxtunarinnar. Staðfestið reikninga með R-fallinu 'basicStats'.
+
+```{r moments}
+data %>%
+      na.omit %>%
+      summarize(N = n() - 1,
+                Væntigildi = mean(Log),
+                Dreifni = var(Log),
+                Staðalfrávik = sqrt(Dreifni),
+                Skeifni = sum((Log - Væntigildi)^3) / (N * Staðalfrávik^3),
+                `Umram reisni` = sum((Log - Væntigildi)^4) / (N * Staðalfrávik^4) - 3) %>%
+      gather(Stat, Value)
+
+basicStats(data$Log)
+```
+
+
+## 2. hluti: Dreifing
+
+* Eru væntigildi, skeifni, og umfram reisn lograávöxtunarinnar marktækt frábrugðnar núlli? Setjið fram og reiknið þrjár núlltilgátur með $5\%$ marktækni. Reiknið í kjölfarið $95\%$ öryggisbil væntigildis, skeifni, og umfram reisnar.
+
+```{r zeromoments}
+data %>%
+      na.omit %>%
+      summarize(N = n(),
+                Væntigildi = mean(Log),
+                Dreifni = var(Log),
+                Staðalfrávik = sqrt(Dreifni),
+                Skeifni = sum((Log - Væntigildi)^3) / ((N - 1) * Staðalfrávik^3),
+                `Umram reisni` = sum((Log - Væntigildi)^4) / ((N - 1) * Staðalfrávik^4) - 3) %>%
+      summarize(p_Væntigildi = Væntigildi / (Staðalfrávik / sqrt(N)),
+                p_Samhverfa = Skeifni / sqrt(6 / N),
+                p_Halar = (`Umram reisni` - 3) / sqrt(24 / N)) %>%
+      summarize(p_Væntigildi = qt(p_Væntigildi, df = 4919),
+                p_Samhvefa = 2 * (1  - pnorm(p_Samhverfa)),
+                p_Halar = 2 * (1 - pnorm(p_Halar)))
+```
+
+* Teiknið dreifingu ávöxtunarinnar (notið R-fallið 'density') og berið saman við normaldreifingu með sama væntigildi og flökt. Hvað getiði sagt um dreifingu ávöxtunarinnar útfrá grafinu og fyrri lið?
+
+```{r density}
+plot_dat <- summarize(data, mean = mean(Log, na.rm = T), sd = sd(Log, na.rm = T))
+ggplot(data, aes(Log)) +
+      geom_density(aes(col = "Raundreifing")) +
+      stat_function(fun = dnorm, n = 1000, args = list(mean = plot_dat$mean,
+                                             sd = plot_dat$sd),
+                    aes(col = "Vænt dreifing")) +
+      scale_color_jama(guide = guide_legend(title = "")) +
+      coord_cartesian(xlim = c(-0.025, 0.025))
+```
+
+
+## 3. hluti: Sjálffylgnifall
+
+* Reiknið útfrá formúlum sjálffylgnistuðla lograávöxtunarinnar fyrir eins og tveggja daga seinkanir (e. lags). Staðfestið reikninga með R-fallinu 'acf'. Notið hornsviga og lengd ávöxtunarraðarinnar til að ná í bút úr ávöxtunarröðinni.
+
+```{r acf}
+# ... <- LogReturn[1:length(LogReturn)-1] # Dæmi um bút úr upphaflegu ávöxtunarröðinni.
+# ... <- acf(...)
+```
+
+* Notið ACF-fallið til að fá fleiri sjálffylgnistuðla. Hvaða stuðlar eru marktækt frábrugðnir núlli? Setjið fram og reiknið núlltilgátur með $5\%$ marktækni. Bláu brotalínurnar í grafi ACF-fallsins koma hér að gagni til að staðfesta niðurstöður.
+
+```{r acfzero}
+# ...
+```
+
+* Er sjálffylgni lograávöxtunarinnar marktækt frábrugðin núlli? Notið heildarpróf Ljung-Box með R-fallinu 'Box.test' til að draga ályktun.
+
+```{r box}
+# ( Box.test(..., lag=..., type='Ljung' ) )
+```
+
+
+## 4. hluti: $AR(2)$ líkan
+
+* Notið R-fallið 'arima' til að fitta $AR(2)$ líkan á lograávöxtunina. Hvert er stikamat $\phi_0, \phi_1, \phi_2$? Athugið að R reiknar $\mu = \mathbb{E}\left[ r_t \right] = \frac{\phi_0}{1-\phi_1-\phi_2}$, sem hægt er að nota til að reikna $\phi_0$. Í R er $AR(2)$ líkanið á forminu:
+$$\begin{aligned}
+r_t-\mu &= \phi_1 \left(r_{t-1}-\mu\right) + \phi_2 \left(r_{t-2}-\mu\right) + a_t
+\\
+\Leftrightarrow \quad r_t &= \phi_0 + \phi_1 r_{t-1} + \phi_2 r_{t-2} + a_t
+\end{aligned}$$
+
+```{r ar2}
+# ( ar2likanid <- arima( ..., order=c(2,0,0) ) )
+```
+
+* Hverjar eru einingarætur líkansins? Uppfylla þær skilyrði um veika sístæðni tímaraðarinnar (af hverju (ekki))? Eru stikar líkansins marktækt frábrugðnir núlli fyrir $5\%$ marktækni (normalpróf; flökt stika er gefið með R-fallinu 'sqrt(diag(likanid$asy.var.coef)')?
+
+```{r ar2params}
+# ar2likanid$ar # Gildi stika ar2 líkansins
+# sqrt(diag(ar2likanid$asy.var.coef) # Flökt stika ar2 líkansins
+```
+
+* Reiknið leifar líkansins fyrir þriðju, fjórðu og fimmtu fyrstu lograávöxtunina (ávöxtun í byrjun janúar 1999). Fyrstu gildi ávöxtunarinnar fást með R-fallinu 'head'. Staðfestið útreikninga með því að skoða '$residuals' parameter líkansins.
+
+```{r ar2res}
+# head(logReturn) # Sýnum fyrstu 6 gildi raðarinnar.
+# ar2likanid$residuals
+```
+
+* Skoðið sjálffylgnifall leifaraðar $AR(2)$, með því að nota ACF-fallið á '$residuals' parameter líkansins. Notið heildarpróf Ljung-Box á leifaröðina til að ákvarða hvort sjálffylgnistuðlarnir séu marktækt frábrugðnir núlli. Hvað getiði sagt um hversu vel $AR(2)$ líkanið lýsir lograávöxtunni/tímaröðinni?
+
+```{r ar2acf}
+# acf(ar2likanid$residuals)
+# ( Box.test(..., lag=..., type='Ljung' ) )
+```
+
+* Spáið lograávöxtunina einn, tvo og þrjá daga fram í tímann. Notið til þess stikamat $AR(2)$ líkansins og síðustu gildi lograávöxtunarinnar (R-fallið 'tail' sýnir síðustu gildi). Staðfestið útreikninga með því að nota R-fallið 'predict' á líkanið.
+
+```{r ar2forecast}
+# tail(logReturn) # Sýnum síðustu 6 gildi.
+# ( ... <- predict(ar2likanid, n.ahead=3, se.fit=TRUE) )
+```
+
+
+## 5. hluti: $AR(p)$ líkan
+
+* Notið R-fallið 'ar' til að fitta $AR(p)$ líkan á lograávöxtunina. Notið Akaika upplýsingagildið (AIC) til að ákvarða gildið á $p$. Hvaða gildi á $p$ hefur fittaða líkanið? Notið $aic parameter líkansins til að sjá mismun upplýsingagildis fittaða líkansins við önnur gildi á $p$. Koma önnur gildi á $p$ til greina í stað þess sem er notað í fittaða líkaninu?
+
+```{r arp}
+# ( ... <- ar(..., aic=TRUE) )
+# ...$aic
+```
+
+* Skoðið sjálffylgnifall leifaraðar fittaða líkansins $AR(p)$, með því að nota ACF-fallið á '$resid' parameter líkansins. Notið heildarpróf Ljung-Box á leifaröðina til að ákvarða hvort sjálffylgnistuðlarnir séu marktækt frábrugðnir núlli. Hvað getiði sagt um hversu vel fittaða $AR(p)$ líkanið lýsir lograávöxtunni/tímaröðinni?
+
+```{r arpacf}
+# ( Box.test(..., lag=..., type='Ljung' ) )
+```
+
+* Spáið lograávöxtunina $20$ daga fram í tímann. Notið til þess R-fallið 'predict' á líkanið. Teiknið upp lograávöxtun síðustu $60$ daga og bætið $20$-daga spánni við grafið með því að nota $pred parameter spárinnar. Bætið einnig eins-staðalfráviks öryggisbili inná grafið með því að nota $se parameter spárinnar.
+
+```{r arpforecast}
+# ( ... <- predict(..., n.ahead=20, se.fit=TRUE) )
+```
